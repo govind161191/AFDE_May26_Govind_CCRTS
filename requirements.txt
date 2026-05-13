@@ -1,0 +1,2 @@
+# Backend dependencies — see backend/requirements.txt for the canonical list.
+-r backend/requirements.txt
