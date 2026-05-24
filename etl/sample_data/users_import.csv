@@ -1,0 +1,8 @@
+name,email,role_name,phone,password
+David Chen,david.chen@example.com,Customer,+1-555-0201,Customer@123
+Aisha Patel,aisha.patel@example.com,Customer,+1-555-0202,Customer@123
+Mark Williams,mark.williams@example.com,Customer,+1-555-0203,Customer@123
+Sunita Rao,sunita.rao@example.com,Customer,+44-20-5555-0204,Customer@123
+Carlos Mendez,carlos.mendez@example.com,Customer,+1-555-0205,Customer@123
+James O'Brien,james.obrien@example.com,Support Agent,+1-555-0301,Agent@123
+Fatima Al-Hassan,fatima.alhassan@example.com,Support Agent,+971-4-555-0302,Agent@123

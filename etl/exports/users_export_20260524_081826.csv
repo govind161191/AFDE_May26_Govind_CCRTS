@@ -1,0 +1,15 @@
+user_id,name,email,role_name,phone,created_date,is_active
+1,System Admin,admin@ccrts.io,Admin,9999999999,2026-05-24 08:16:55.011942,True
+2,Sarah Supervisor,sarah@ccrts.io,Supervisor,9111111111,2026-05-24 08:16:55.011942,True
+3,Alex Agent,alex@ccrts.io,Support Agent,9222222222,2026-05-24 08:16:55.011942,True
+4,Maria Agent,maria@ccrts.io,Support Agent,9333333333,2026-05-24 08:16:55.011942,True
+5,Govind Kumar,govind@example.com,Customer,9876543210,2026-05-24 08:16:55.011942,True
+6,Priya Sharma,priya@example.com,Customer,9123456780,2026-05-24 08:16:55.011942,True
+7,Rahul Verma,rahul@example.com,Customer,9988776655,2026-05-24 08:16:55.011942,True
+8,David Chen,david.chen@example.com,Customer,+1-555-0201,2026-05-24 08:17:00.521233,True
+9,Aisha Patel,aisha.patel@example.com,Customer,+1-555-0202,2026-05-24 08:17:00.719090,True
+10,Mark Williams,mark.williams@example.com,Customer,+1-555-0203,2026-05-24 08:17:00.909616,True
+11,Sunita Rao,sunita.rao@example.com,Customer,+44-20-5555-0204,2026-05-24 08:17:01.126227,True
+12,Carlos Mendez,carlos.mendez@example.com,Customer,+1-555-0205,2026-05-24 08:17:01.325792,True
+13,James O'Brien,james.obrien@example.com,Support Agent,+1-555-0301,2026-05-24 08:17:01.521694,True
+14,Fatima Al-Hassan,fatima.alhassan@example.com,Support Agent,+971-4-555-0302,2026-05-24 08:17:01.742372,True

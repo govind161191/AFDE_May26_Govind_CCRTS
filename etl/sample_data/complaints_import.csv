@@ -1,0 +1,13 @@
+customer_email,subject,description,category_name,priority,status,created_date,resolved_date,assigned_agent_email
+govind@example.com,Overcharged on April statement,My April bill shows a charge of $150 instead of the usual $99. Please investigate and issue a refund for the difference.,Billing Issues,High,Open,2026-05-01 09:00:00,,
+priya@example.com,Mobile app crashes on login,The mobile app crashes every time I try to log in after the latest update. I have tried reinstalling but the issue persists.,Technical Problems,Medium,Open,2026-05-02 10:30:00,,alex@ccrts.io
+rahul@example.com,Parcel lost in transit,My order #78923 shipped on April 25th has not arrived. The tracking page has shown In Transit for 10 days with no movement.,Delivery Delays,High,In Progress,2026-05-03 14:00:00,,maria@ccrts.io
+govind@example.com,WiFi router dead on arrival,The router I received does not power on despite trying multiple outlets and cables. This is clearly defective hardware.,Product Defects,Critical,Open,2026-05-05 08:00:00,,
+priya@example.com,Cannot update profile email,The profile settings page throws a 500 error every time I submit a new email address.,Account Issues,Low,Open,2026-05-07 11:00:00,,alex@ccrts.io
+rahul@example.com,Rude support agent interaction,The support agent I spoke with on May 6th was dismissive and ended the chat without resolving my issue.,Customer Service Complaints,Medium,Open,2026-05-08 16:00:00,,
+govind@example.com,Office internet down for 48 hours,Our office connection has been completely down since Monday morning affecting all 20 staff members. This is urgent.,Service Disruption,Critical,Escalated,2026-05-10 07:00:00,,
+priya@example.com,Wrong colour item shipped,I ordered the blue model SKU BL-4421 but received the red model. I need an exchange or full refund.,Delivery Delays,Medium,Resolved,2026-05-12 13:00:00,2026-05-14 10:00:00,maria@ccrts.io
+rahul@example.com,Subscription not cancelled after request,I submitted a cancellation request on April 30th but was charged again on May 1st. The subscription is still active.,Billing Issues,High,Open,2026-05-15 09:30:00,,
+govind@example.com,Smart TV remote not pairing,The replacement remote control shipped with my TV does not pair despite following all steps in the manual.,Product Defects,Low,Open,2026-05-16 14:00:00,,
+priya@example.com,Account locked after password reset,After resetting my password I am now getting an account locked message and cannot log in at all.,Account Issues,High,Open,2026-05-17 08:00:00,,alex@ccrts.io
+rahul@example.com,Technician did not show for appointment,I had a confirmed appointment for May 18th between 10am and 2pm. The technician never arrived and I took the day off work.,Customer Service Complaints,High,Open,2026-05-18 15:00:00,,

@@ -1,0 +1,9 @@
+# ETL pipeline dependencies
+# Install from the project root: pip install -r etl/requirements.txt
+#
+# The ETL also uses everything in backend/requirements.txt (SQLAlchemy,
+# passlib, etc.) — install that first:
+#   pip install -r backend/requirements.txt
+
+pandas>=2.0.0
+openpyxl>=3.1.0
