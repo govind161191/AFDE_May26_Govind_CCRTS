@@ -79,11 +79,24 @@ AFDE_May26_Govind_CCRTS/
 │   │   ├── notifications_router.py
 │   │   └── dashboard_router.py
 │   ├── services/
-│   │   ├── sla.py               # Priority → deadline + breach detection
+│   │   ├── sla.py               # Priority -> deadline + breach detection
 │   │   ├── notifications.py     # Notification creation
 │   │   └── seed_data.py         # Roles, categories, demo users
 │   ├── uploads/                 # Attachment storage (gitignored)
 │   └── requirements.txt
+├── etl/                         # ETL pipeline (standalone)
+│   ├── pipeline.py              # CLI orchestrator — entry point
+│   ├── config.py                # DB path, SLA constants, valid statuses
+│   ├── etl_models.py            # SQLAlchemy models for 5 ETL summary tables
+│   ├── extract.py               # Extract from CSV files or operational DB
+│   ├── transform.py             # Validate, clean, enrich, aggregate
+│   ├── load.py                  # Load into operational + summary tables
+│   ├── export.py                # Export to CSV and multi-sheet Excel
+│   ├── sample_data/
+│   │   ├── complaints_import.csv
+│   │   └── users_import.csv
+│   ├── exports/                 # Runtime output (gitignored)
+│   └── requirements.txt         # pandas, openpyxl
 ├── frontend/
 │   ├── public/index.html
 │   ├── src/
@@ -229,7 +242,191 @@ See [`docs/API.md`](docs/API.md) for full request/response examples.
 | CRUD | Books-equivalent CRUD on Complaints, Users, Categories, Feedback |
 | Search & Filter | `/complaints?status=&priority=&search=` + UI filter bar |
 | SLA & Escalation | `services/sla.py`, `auto_escalate_overdue` |
+| ETL Pipeline | `etl/` — full Extract / Transform / Load / Export pipeline |
 | Documentation | This README + `docs/API.md` + `docs/HLD.md` + `docs/DB_DESIGN.md` |
+
+---
+
+## ETL Pipeline
+
+The `etl/` directory adds a standalone Python data pipeline that sits alongside the FastAPI application and operates directly on the same SQLite database.
+
+### Why ETL?
+
+The application captures live operational data but has no way to:
+- **Ingest** historical or bulk complaint data from external sources (CSV / legacy systems)
+- **Summarise** that data into analytics-ready tables without burdening the OLTP API
+- **Publish** reports as downloadable CSV or Excel files for external stakeholders
+
+The ETL pipeline solves all three.
+
+---
+
+### Pipeline Flow
+
+```
+                          CCRTS ETL PIPELINE
+  ================================================================
+
+  SOURCES                    STAGES                    TARGETS
+  -------                    ------                    -------
+
+  CSV Files                  EXTRACT                   pandas
+  (complaints_import.csv) -->  extract_csv()        --> DataFrame
+  (users_import.csv)           extract_*_from_db()
+  Operational DB          -->                           DataFrame
+  (ccrts.db)
+
+                             TRANSFORM
+                    +------------------------------+
+                    | Import path:                 |
+                    |  - validate required fields  |
+                    |  - resolve FK lookups        |    clean
+                    |    (email -> customer_id,    | --> DataFrame
+                    |     name  -> category_id,    |
+                    |     name  -> agent_id)        |
+                    |  - calculate SLA deadline     |
+                    |  - hash passwords (bcrypt)   |
+                    |  - generate complaint number  |
+                    +------------------------------+
+                    | Analytics path:              |
+                    |  - classify SLA status       |
+                    |    (On Track / At Risk /     |    analytics
+                    |     Breached / Met)          | --> dict of
+                    |  - compute resolution hours  |    DataFrames
+                    |  - aggregate by category     |
+                    |  - aggregate by agent        |
+                    |  - build daily stats         |
+                    +------------------------------+
+
+                              LOAD
+                    +--------------------------+
+                    | Operational tables:      |
+                    |  complaints              | --> ccrts.db
+                    |  complaint_history       |
+                    |  users                   |
+                    +--------------------------+
+                    | ETL summary tables:      |
+                    |  etl_run_log             |
+                    |  etl_complaint_summary   | --> ccrts.db
+                    |  etl_agent_performance   |
+                    |  etl_daily_stats         |
+                    |  etl_sla_analysis        |
+                    +--------------------------+
+
+                             EXPORT
+                    +--------------------------+
+                    |  complaints_export.csv   |
+                    |  users_export.csv        | --> etl/exports/
+                    |  analytics_report.xlsx   |
+                    |   - Overview (KPIs)      |
+                    |   - Category Summary     |
+                    |   - Agent Performance    |
+                    |   - Daily Stats          |
+                    |   - SLA Analysis         |
+                    |   - All Complaints       |
+                    +--------------------------+
+
+                          ETL RUN LOG
+                    (every phase writes a row to
+                     etl_run_log: status, records
+                     extracted / transformed /
+                     loaded, duration, errors)
+```
+
+---
+
+### Module Responsibilities
+
+| Module | Responsibility |
+|---|---|
+| `config.py` | Central constants — database URL, SLA hours, valid statuses |
+| `etl_models.py` | SQLAlchemy models for 5 ETL summary tables (`etl_` prefix) |
+| `extract.py` | `extract_csv()` reads any delimiter-separated file; `extract_*_from_db()` queries the operational DB and returns typed DataFrames |
+| `transform.py` | **Import path** — validates fields, resolves FK lookups, hashes passwords, generates complaint numbers, calculates SLA deadlines. **Analytics path** — SLA classification, resolution-hour calculation, category/agent/daily aggregations |
+| `load.py` | `load_complaints()` / `load_users()` insert into operational tables; `upsert_summary_tables()` truncates and repopulates all ETL summary tables; `log_etl_run()` audits every phase |
+| `export.py` | `export_complaints_csv()`, `export_users_csv()`, `export_analytics_excel()` — all output is timestamped and written to `etl/exports/` |
+| `pipeline.py` | CLI entry point; `--import-complaints`, `--import-users`, `--analytics`, `--export`, `--all` flags; per-phase error recovery with `session.rollback()` |
+
+---
+
+### ETL Summary Tables
+
+Five new tables are created in `ccrts.db` on first pipeline run:
+
+| Table | Description |
+|---|---|
+| `etl_run_log` | Audit trail of every phase execution — status, record counts, duration, error details |
+| `etl_complaint_summary` | Per-category counts: total, open, in-progress, resolved, escalated, SLA-breached, avg resolution hours |
+| `etl_agent_performance` | Per-agent metrics: assigned, resolved, escalation count, avg resolution hours, avg feedback rating |
+| `etl_daily_stats` | Daily complaint volume: created, resolved, escalated per calendar day, avg resolution hours |
+| `etl_sla_analysis` | Per-complaint SLA classification: `On Track` / `At Risk` / `Breached` / `Met`, resolution hours |
+
+---
+
+### Quick Start
+
+```bash
+# 1. Install ETL dependencies (on top of backend deps)
+pip install -r backend/requirements.txt
+pip install -r etl/requirements.txt
+
+# 2. Seed the database first (if not already done)
+cd backend && python services/seed_data.py && cd ..
+
+# 3a. Run the full pipeline with bundled sample data
+python etl/pipeline.py --all
+
+# 3b. Import your own complaints CSV
+python etl/pipeline.py --import-complaints path/to/complaints.csv
+
+# 3c. Refresh analytics summary tables only
+python etl/pipeline.py --analytics
+
+# 3d. Export all data to etl/exports/
+python etl/pipeline.py --export
+
+# 3e. Chain: import + analytics + export in one call
+python etl/pipeline.py --import-complaints data.csv --analytics --export
+```
+
+### Sample Import CSV Columns
+
+**complaints_import.csv** (required: `customer_email`, `subject`, `description`, `category_name`, `priority`):
+
+| Column | Required | Notes |
+|---|:-:|---|
+| `customer_email` | Yes | Must match an existing Customer account |
+| `subject` | Yes | Free text |
+| `description` | Yes | Free text |
+| `category_name` | Yes | Must match a category in the DB (case-insensitive) |
+| `priority` | Yes | `Low` / `Medium` / `High` / `Critical` |
+| `status` | No | Defaults to `Open` |
+| `created_date` | No | ISO 8601 (`YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS`); defaults to now |
+| `resolved_date` | No | ISO 8601; auto-calculated for `Resolved`/`Closed` rows if omitted |
+| `assigned_agent_email` | No | Must match a Support Agent account |
+
+**users_import.csv** (required: `name`, `email`, `role_name`, `password`):
+
+| Column | Required | Notes |
+|---|:-:|---|
+| `name` | Yes | Display name |
+| `email` | Yes | Must be unique; duplicates are skipped with a warning |
+| `role_name` | Yes | `Admin` / `Supervisor` / `Support Agent` / `Customer` |
+| `password` | Yes | Plain text in the CSV; bcrypt-hashed before insert |
+| `phone` | No | Optional contact number |
+
+---
+
+### Export Outputs
+
+Every export run writes three timestamped files to `etl/exports/`:
+
+| File | Contents |
+|---|---|
+| `complaints_export_YYYYMMDD_HHMMSS.csv` | All complaints with customer/category names joined |
+| `users_export_YYYYMMDD_HHMMSS.csv` | All users (password hashes excluded) |
+| `analytics_report_YYYYMMDD_HHMMSS.xlsx` | 6-sheet workbook: Overview, Category Summary, Agent Performance, Daily Stats, SLA Analysis, All Complaints |
 
 ---
 
